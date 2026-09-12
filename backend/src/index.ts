@@ -17,6 +17,16 @@ app.use(
 );
 app.use(express.json({ limit: '1mb' }));
 
+// Middleware to ensure DB connection on serverless requests
+app.use(async (_req: Request, _res: Response, next: NextFunction) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.use('/api/photos', photosRouter);
 
 app.get('/health', (_req: Request, res: Response) => {
@@ -29,13 +39,17 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Backend server listening on port ${PORT}`);
+if (!process.env.VERCEL) {
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Backend server listening on port ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to start server:', err);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error('Failed to start server:', err);
-    process.exit(1);
-  });
+}
+
+export default app;

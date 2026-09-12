@@ -8,6 +8,7 @@ import {
   imageUrl,
 } from '@/lib/api';
 import { fileToBlob, type PhotoRecord } from '@/lib/photos';
+import { toast } from 'sonner';
 
 export function usePhotos() {
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
@@ -78,15 +79,21 @@ export function usePhotos() {
     async (files: FileList | File[]) => {
       setUploading(true);
       try {
+        let count = 0;
         for (const file of Array.from(files)) {
           if (!file.type.startsWith('image/')) continue;
           const blob = await fileToBlob(file);
           const caption = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
           await uploadPhoto(blob, { caption });
+          count++;
+        }
+        if (count > 0) {
+          toast.success(`Successfully uploaded ${count} photo${count > 1 ? 's' : ''}`);
         }
         await refresh();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to upload photos:', err);
+        toast.error(err.message || 'Failed to upload photo. Please check secret word and backend.');
       } finally {
         setUploading(false);
       }

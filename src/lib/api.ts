@@ -29,11 +29,25 @@ function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<strin
 }
 
 export async function fetchPhotos(): Promise<PhotoData[]> {
-  const res = await fetch(`${API_BASE}/api/photos`, {
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error('Failed to fetch photos');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/api/photos`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      let errMsg = `Failed to fetch photos (${res.status})`;
+      try {
+        const json = await res.json();
+        if (json.error) errMsg = json.error;
+      } catch {}
+      throw new Error(errMsg);
+    }
+    return res.json();
+  } catch (err: any) {
+    if (err.message && err.message.includes('Failed to fetch')) {
+      throw new Error(`Cannot reach backend server at ${API_BASE}. Check VITE_API_URL environment variable.`);
+    }
+    throw err;
+  }
 }
 
 export async function uploadPhoto(
@@ -47,13 +61,27 @@ export async function uploadPhoto(
   if (metadata.chapter !== undefined) form.append('chapter', metadata.chapter);
   if (metadata.favorite !== undefined) form.append('favorite', String(metadata.favorite));
 
-  const res = await fetch(`${API_BASE}/api/photos`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: form,
-  });
-  if (!res.ok) throw new Error('Failed to upload photo');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/api/photos`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: form,
+    });
+    if (!res.ok) {
+      let errorMsg = `Upload failed (${res.status} ${res.statusText})`;
+      try {
+        const json = await res.json();
+        if (json.error) errorMsg = json.error;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+    return res.json();
+  } catch (err: any) {
+    if (err.message && err.message.includes('Failed to fetch')) {
+      throw new Error(`Cannot reach backend server at ${API_BASE}. Verify backend is live and CORS is configured.`);
+    }
+    throw err;
+  }
 }
 
 export async function deletePhotoApi(id: string): Promise<void> {

@@ -51,6 +51,7 @@ router.get('/:id/image', readLimiter, validateObjectId, async (req: Request, res
     res.set({
       'Content-Type': photo.contentType,
       'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
     });
     res.send(photo.image);
   } catch (error) {

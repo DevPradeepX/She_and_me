@@ -8,7 +8,11 @@ import photosRouter from './routes/photos.js';
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 const rawFrontendUrl = process.env.FRONTEND_URL || '*';
 const allowedOrigins = rawFrontendUrl
